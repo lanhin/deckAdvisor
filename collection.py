@@ -1,3 +1,5 @@
+from hearthstone.deckstrings import Deck
+
 # TODO: handle exceptions
 class Collection:
     """The card collection class
@@ -14,21 +16,21 @@ class Collection:
     def writeToFiles(self, path):
         """Write the database into a file with path PATH
         """
-        with open (path, "wb") as f:
+        with open (path, "wt") as f:
             for card in self.collect_db:
-                f.write(card.toString()+','+self.collect_db[card].toString())
+                f.write(str(card)+','+str(self.collect_db[card])+'\n')
                 
     def loadFromFile(self, path):
         """Load the database from a file with path PATH
         """
-        with open (path, "rb") as f:
+        with open (path, "rt") as f:
             for line in f.readlines():
-                self.collect_db.add(tuple(line.split(',')))
-        self.calculateNumbers()
+                card, cardNum = [int(x) for x in line.split(',')]
+                self.add((card, cardNum))
 
     def calculateNumbers(self):
         """Calculate the statistic vars
-        Used by loadFromFile()
+        It may will be removed in the future
         """
         for card in self.collect_db:
             self.num_of_cards += 1
@@ -48,6 +50,8 @@ class Collection:
         """Print the database and the statistic number
         """
         print (self.collect_db)
+        for card in self.collect_db:
+            print (card,":",self.ows(card))
         print ("Number of different cards:", self.num_of_cards)
         print ("Total cards:", self.total_num_cards)
 
@@ -59,7 +63,7 @@ class Collection:
             return
         for card in self.collect_db:
             if self.collect_db[card] > max_card_count:
-                self.total_num_cards -= (max_card_count - self.collect_db[card])
+                self.total_num_cards -= (self.collect_db[card] - max_card_count)
                 self.collect_db[card] = max_card_count
 
     def ows(self, card):
@@ -69,3 +73,13 @@ class Collection:
             return 0
         else:
             return self.collect_db[card]
+
+    def initFromDeckStringFile(self, path):
+        """Init the database from a deckstring file
+        The file should contain a set of deckstrings, every string in a line
+        """
+        with open (path, "rt") as f:
+            for line in f.readlines():
+                deck = Deck.from_deckstring(line)
+                for cardPair in deck.cards:
+                    self.add(cardPair)

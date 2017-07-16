@@ -83,3 +83,15 @@ class Collection:
                 deck = Deck.from_deckstring(line)
                 for cardPair in deck.cards:
                     self.add(cardPair)
+
+    def calculateLacks(self, cards):
+        """Calculate the lacked card in a deck
+        The returned value: [tuple(card id, count)]
+        """
+        lacks = []
+        for card in cards:
+            if self.collect_db.get(card[0]) == None: # the card doesn't exist in the collection
+                lacks.append((card[0], card[1])) # append a tuple
+            elif self.collect_db[card[0]] < card[1]:
+                lacks.append((card[0], card[1] - self.Collect_db[card[0]])) # append a tuple
+        return lacks

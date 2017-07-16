@@ -1,3 +1,8 @@
+'''
+@2017-07  by lanhin
+
+'''
+
 from hearthstone.deckstrings import Deck
 
 # TODO: handle exceptions
@@ -89,9 +94,13 @@ class Collection:
         The returned value: [tuple(card id, count)]
         """
         lacks = []
+        alreadyHave = []
         for card in cards:
             if self.collect_db.get(card[0]) == None: # the card doesn't exist in the collection
                 lacks.append((card[0], card[1])) # append a tuple
             elif self.collect_db[card[0]] < card[1]:
-                lacks.append((card[0], card[1] - self.Collect_db[card[0]])) # append a tuple
-        return lacks
+                lacks.append((card[0], card[1] - self.collect_db[card[0]])) # append a tuple
+                alreadyHave.append((card[0], self.collect_db[card[0]]))
+            else: # self.collect_db[card[0]] >= card[1]
+                alreadyHave.append((card[0], card[1]))
+        return lacks, alreadyHave

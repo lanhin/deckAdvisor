@@ -102,3 +102,6 @@ ENV/
 
 # Emacs
 *~
+
+# HearthStone Data
+hsdata

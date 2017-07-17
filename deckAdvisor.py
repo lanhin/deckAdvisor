@@ -32,9 +32,16 @@ def calculateLacksFromFile(path, collection, db_dbf):
     newlist = []
     with open (path, "rt") as f:
         for line in f.readlines():
+            cardsInDeck = 0
             deck = Deck.from_deckstring(line)
+            for cardPair in deck.cards:
+                cardsInDeck += cardPair[1]
+            if cardsInDeck < 30:
+                # Ignore the decks containing less than 30 cards
+                continue
             newdict = {}
             newdict["name"] = "Deck name"
+            newdict["url"] = "Unknown"
             newdict["date"] = "Unknown"
             newdict["type"] = "Unknown"
             newdict["deck"] = deck
@@ -58,15 +65,16 @@ def calculateLacksFromJSONFile(path, collection, db_dbf, dateLimit):
     date = dt.strptime(dateLimit, "%m/%d/%Y")
     with open (path, "rt") as f:
         for line in f.readlines():
+            cardsInDeck = 0
             data = json.loads(line)['result']
             deckCreatedDate = dt.strptime(data['date'].split(' ')[1], "%m/%d/%Y")
             if date > deckCreatedDate:
                 continue
             deck = Deck.from_deckstring(data['deckstring'])
-            if len(deck.cards) <= 0:
-                # If there exists some connection problem,
-                # we may get an empty deck here.
-                # If so, just ignore it.
+            for cardPair in deck.cards:
+                cardsInDeck += cardPair[1]
+            if cardsInDeck < 30:
+                # Ignore the decks containing less than 30 cards
                 continue
             newdict = {}
             newdict["name"] = data['title'].split('-')[0]
@@ -91,17 +99,17 @@ def calcArcaneDust(cards, db_dbf):
     for cardPair in cards:
         card = db_dbf[cardPair[0]]
         if card.rarity == Rarity.COMMON:
-            dustOut += 5
-            dustIn += 40
+            dustOut += 5 * cardPair[1]
+            dustIn += 40 * cardPair[1]
         elif card.rarity == Rarity.RARE:
-            dustOut += 20
-            dustIn += 100
+            dustOut += 20 * cardPair[1]
+            dustIn += 100 * cardPair[1]
         elif card.rarity == Rarity.EPIC:
-            dustOut += 100
-            dustIn += 400
+            dustOut += 100 * cardPair[1]
+            dustIn += 400 * cardPair[1]
         elif card.rarity == Rarity.LEGENDARY:
-            dustOut += 400
-            dustIn += 1600
+            dustOut += 400 * cardPair[1]
+            dustIn += 1600 * cardPair[1]
     return dustOut, dustIn
 
 def outputRecommend(db, deckList, top=20):
@@ -239,7 +247,7 @@ def main():
 
 
     # Calculate the lacked cards from deckFile
-#    deckLacks = calculateLacksFromFile(deckFile, col, db)
+    #deckLacks0 = calculateLacksFromFile(deckFile, col, db)
     deckLacks = calculateLacksFromJSONFile(deckJSONFile, col, db, dateLimit)
 
     def dust(a):
@@ -249,6 +257,7 @@ def main():
     #test start
     #print (deckLacks)
     #print (sortedLacks)
+    #outputRecommend(db, deckLacks0)
     #test end
 
     # Output recommend decks in detail

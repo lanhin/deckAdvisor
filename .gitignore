@@ -105,3 +105,6 @@ ENV/
 
 # HearthStone Data
 hsdata
+
+# output dir
+outputs

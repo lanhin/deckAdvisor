@@ -5,6 +5,7 @@
 
 import os
 import json
+import operator
 from hearthstone.deckstrings import Deck
 from hearthstone.enums import FormatType
 from hearthstone.cardxml import load
@@ -90,7 +91,10 @@ def calcArcaneDust(cards, db_dbf):
     return dustOut, dustIn
 
 def outputRecommend(db, deckList):
-    """
+    """Output recommend deck list
+    Args:
+      db: The all cards' database
+      deckList: The recommand deck list to be outputed
     """
     for item in deckList:
         print ("========")
@@ -107,6 +111,69 @@ def outputRecommend(db, deckList):
             card = db[cardPair[0]]
             print (cardPair[1], 'x', card.name, ":", card.rarity)
     print ("========")
+
+def outputRecommendToJSON(path, deckList):
+    """Write the recommand deck list into a json file with path PATH.
+    Args:
+      path: The output json file
+      deckList: A list of dict to be written into json file.
+    TODO: check if path already exists, mkdir if not.
+    """
+    with open (path, "w") as f:
+        for item in deckList:
+            # Pop 'deck' from item since deck is not JSON serializable
+            deck = item['deck']
+            item.pop('deck')
+            json.dump(item, f)
+            item['deck'] = deck
+
+def theUselessCards(collection, deckList):
+    """Find out the cards that are useless
+    Sum the 'alreadyHave' cards in deckList, and then find out the most useless ones from the collection
+    Args:
+    Return:
+      newdict: the used times of every card, 
+    """
+    newdict = {}
+    for item in deckList:
+        for cardPair in item['alreadyHave']:
+            if newdict.get(cardPair[0]) != None: # the card exists in the dict
+                newdict[cardPair[0]] += cardPair[1]
+            else:
+                newdict[cardPair[0]] = cardPair[1]
+    for card in collection.collect_db:
+        if newdict.get(card) == None: # the card doesn't exist in the dict
+            newdict[card] = 0
+
+    # sort newdict by value then return it
+    return sorted(newdict.items(), key=operator.itemgetter(1))
+
+def theMostWantedCards(deckList):
+    """Find out the cards that are most wanted
+    Sum the 'lacked' cards in deckList, find the most wanted ones.
+    Args:
+    Returns:
+    
+    """
+    lackedOne = {}
+    lackedTwo = {}
+    totalLacked = {}
+    for item in deckList:
+        for cardPair in item['lacked']:
+            if totalLacked.get(cardPair[0]) != None: # the card exists in the dict
+                totalLacked[cardPair[0]] += cardPair[1]
+            else:
+                totalLacked[cardPair[0]] = cardPair[1]
+
+    # reverse sort titalLacked by value then return it
+    return reversed(sorted(lackedOne.items(), key=operator.itemgetter(1))), reversed(sorted(lackedTwo.items(), key=operator.itemgetter(1))), reversed(sorted(totalLacked.items(), key=operator.itemgetter(1)))
+
+def outputCardsFromList(cardPairList, db):
+    """Output cards(the appearance times and name) from a card pair list.
+    """
+    for cardPair in cardPairList:
+        card  = db[cardPair[0]]
+        print (cardPair[1], 'x', card.name,' ', card.rarity)
     
 def main():
     cardDefs = os.path.join("hsdata","CardDefs.xml")
@@ -114,6 +181,7 @@ def main():
     collectionDeckstringFile = "inputs/mycards"
     deckFile = "inputs/decks"
     deckJSONFile = "inputs/decks.json"
+    recommendJSONFile = "outputs/recommend.json"
 
     # Cereate and init the database
     db = initDatabaseFromXml(cardDefs)
@@ -131,8 +199,10 @@ def main():
     col = Collection()
     if os.path.exists(collectionFile):
         col.loadFromFile(collectionFile)
+        col.limitTo(2)
     else:
         col.initFromDeckStringFile(collectionDeckstringFile)
+        col.limitTo(2)
         col.writeToFiles(collectionFile)
 
     #test start
@@ -155,6 +225,21 @@ def main():
 
     # Output recommend decks in detail
     outputRecommend(db, sortedLacks)
+
+    outputRecommendToJSON(recommendJSONFile, sortedLacks)
+
+    #test start
+    unused = theUselessCards(col, sortedLacks)
+    time1, time2, timetotal = theMostWantedCards(sortedLacks)
+
+    print ("========")
+    print ("The unsed cards:")
+#    print (unused)
+    outputCardsFromList(unused, db)
+    print ("========")
+    print ("The most wanted cards:")
+    outputCardsFromList(timetotal, db)
+    #test end
     
 if __name__ == "__main__":
     main()

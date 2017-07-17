@@ -31,7 +31,6 @@ def calculateLacksFromFile(path, collection, db_dbf):
     with open (path, "rt") as f:
         for line in f.readlines():
             deck = Deck.from_deckstring(line)
-            #print (deck.cards)
             newdict = {}
             newdict["name"] = "Deck name"
             newdict["date"] = "Unknown"
@@ -55,7 +54,8 @@ def calculateLacksFromJSONFile(path, collection, db_dbf):
                 # If so, just ignore it.
                 continue
             newdict = {}
-            newdict["name"] = data['title']
+            newdict["name"] = data['title'].split('-')[0]
+            newdict["url"] = data['url']
             newdict["date"] = data['date']
             newdict["type"] = data['type']
             newdict["deck"] = deck
@@ -94,7 +94,8 @@ def outputRecommend(db, deckList):
     """
     for item in deckList:
         print ("========")
-        print ("Name:",item['name'], "type:",item['type'],  "date:", item['date'], ", dust in need:",item['dust'],", power:",item['power'])
+        print ("Name:",item['name'], ", type:",item['type'],  ", date:", item['date'], ", dust in need:",item['dust'],", power:",item['power'])
+        print ("URL:",item['url'])
         if len(item['lacked']) > 0:
             print("Lacked cards:")
         for cardPair in item['lacked']:

@@ -70,7 +70,8 @@ def calculateLacksFromJSONFile(path, collection, db_dbf):
             print (data)
             print (deck.cards)
             newdict = {}
-            newdict["name"] = data['title']
+            newdict["name"] = data['title'].split(b'-')[0]
+            newdict["url"] = data['url']
             newdict["date"] = data['date']
             newdict["type"] = data['type']
             newdict["deck"] = deck

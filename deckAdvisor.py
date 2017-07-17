@@ -4,6 +4,7 @@
 '''
 
 import os
+import json
 from hearthstone.deckstrings import Deck
 from hearthstone.enums import FormatType
 from hearthstone.cardxml import load
@@ -21,7 +22,10 @@ def initDatabaseFromXml(path, locale="zhCN"):
     return db_dbf
 
 def calculateLacksFromFile(path, collection, db_dbf):
-    """Calculate the lacked cards from decks stored in file PATH
+    """Calculate the lacked cards from decks stored in file PATH.
+    The file should contain a set of deckstrings, every string in a line.
+    This may will be removed in the future,
+    since the function calculateLacksFromJSONFile() is more practical.
     """
     newlist = []
     with open (path, "rt") as f:
@@ -29,13 +33,38 @@ def calculateLacksFromFile(path, collection, db_dbf):
             deck = Deck.from_deckstring(line)
             #print (deck.cards)
             newdict = {}
-            newdict["name"] = "name"
+            newdict["name"] = "Deck name"
+            newdict["date"] = "Unknown"
+            newdict["type"] = "Unknown"
             newdict["deck"] = deck
             newdict["lacked"], newdict["alreadyHave"] = collection.calculateLacks(deck.cards)
             _, newdict["dust"] = calcArcaneDust(newdict["lacked"], db_dbf)
             newdict["power"] = 1
             newlist.append(newdict)
     return newlist
+
+def calculateLacksFromJSONFile(path, collection, db_dbf):
+    newlist = []
+    with open (path, "rt") as f:
+        for line in f.readlines():
+            data = json.loads(line)['result']
+            deck = Deck.from_deckstring(data['deckstring'])
+            if len(deck.cards) <= 0:
+                # If there exists some connection problem,
+                # we may get an empty deck here.
+                # If so, just ignore it.
+                continue
+            newdict = {}
+            newdict["name"] = data['title']
+            newdict["date"] = data['date']
+            newdict["type"] = data['type']
+            newdict["deck"] = deck
+            newdict["lacked"], newdict["alreadyHave"] = collection.calculateLacks(deck.cards)
+            _, newdict["dust"] = calcArcaneDust(newdict["lacked"], db_dbf)
+            newdict["power"] = 1
+            newlist.append(newdict)
+    return newlist
+
 
 def calcArcaneDust(cards, db_dbf):
     """Calculate the aracne dust
@@ -65,7 +94,7 @@ def outputRecommend(db, deckList):
     """
     for item in deckList:
         print ("========")
-        print ("Name:",item['name'],", dust in need:",item['dust'],", power:",item['power'])
+        print ("Name:",item['name'], "type:",item['type'],  "date:", item['date'], ", dust in need:",item['dust'],", power:",item['power'])
         if len(item['lacked']) > 0:
             print("Lacked cards:")
         for cardPair in item['lacked']:
@@ -83,6 +112,7 @@ def main():
     collectionFile = "mycards.csv"
     collectionDeckstringFile = "mycards"
     deckFile = "decks"
+    deckJSONFile = "t3.json"
 
     # Cereate and init the database
     db = initDatabaseFromXml(cardDefs)
@@ -110,7 +140,8 @@ def main():
 
 
     # Calculate the lacked cards from deckFile
-    deckLacks = calculateLacksFromFile(deckFile, col, db)
+#    deckLacks = calculateLacksFromFile(deckFile, col, db)
+    deckLacks = calculateLacksFromJSONFile(deckJSONFile, col, db)
 
     def dust(a):
         return a['dust']

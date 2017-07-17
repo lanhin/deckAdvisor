@@ -6,6 +6,7 @@
 import os
 import json
 import operator
+from datetime import datetime as dt
 from hearthstone.deckstrings import Deck
 from hearthstone.enums import FormatType
 from hearthstone.cardxml import load
@@ -43,13 +44,24 @@ def calculateLacksFromFile(path, collection, db_dbf):
             newlist.append(newdict)
     return newlist
 
-def calculateLacksFromJSONFile(path, collection, db_dbf):
-    """
+def calculateLacksFromJSONFile(path, collection, db_dbf, dateLimit):
+    """Calculate the lacked cards from a json file
+    Args:
+      path: The path of the input json file
+      collection: My card collection
+      db_dbf: The database of all cards
+      dateLimit: A date string, we only consider the decks newer than that
+    Returns:
+      newlist: a list of dict, each of which is a deck
     """
     newlist = []
+    date = dt.strptime(dateLimit, "%m/%d/%Y")
     with open (path, "rt") as f:
         for line in f.readlines():
             data = json.loads(line)['result']
+            deckCreatedDate = dt.strptime(data['date'].split(' ')[1], "%m/%d/%Y")
+            if date > deckCreatedDate:
+                continue
             deck = Deck.from_deckstring(data['deckstring'])
             if len(deck.cards) <= 0:
                 # If there exists some connection problem,
@@ -197,6 +209,7 @@ def main():
     deckFile = "inputs/decks"
     deckJSONFile = "inputs/decks.json"
     recommendJSONFile = "outputs/recommend.json"
+    dateLimit = "07/01/2017"
 
     # Cereate and init the database
     db = initDatabaseFromXml(cardDefs)
@@ -227,7 +240,7 @@ def main():
 
     # Calculate the lacked cards from deckFile
 #    deckLacks = calculateLacksFromFile(deckFile, col, db)
-    deckLacks = calculateLacksFromJSONFile(deckJSONFile, col, db)
+    deckLacks = calculateLacksFromJSONFile(deckJSONFile, col, db, dateLimit)
 
     def dust(a):
         return a['dust']

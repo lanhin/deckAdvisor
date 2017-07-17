@@ -112,8 +112,8 @@ def main():
     cardDefs = os.path.join("hsdata","CardDefs.xml")
     collectionFile = "inputs/mycards.csv"
     collectionDeckstringFile = "inputs/mycards"
-    deckFile = "decks"
-    deckJSONFile = "t3.json"
+    deckFile = "inputs/decks"
+    deckJSONFile = "inputs/decks.json"
 
     # Cereate and init the database
     db = initDatabaseFromXml(cardDefs)

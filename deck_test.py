@@ -41,10 +41,10 @@ for cardPair in deck.cards:
 #    col.add(cardPair)
 #col.output()
 
-#col.writeToFiles("mycards.csv")
+#col.writeToFiles("inputs/mycards.csv")
 
 col2 = Collection()
-col2.loadFromFile("mycards.csv")
+col2.loadFromFile("inputs/mycards.csv")
 
 col2.output()
 #col2.limitTo(1)

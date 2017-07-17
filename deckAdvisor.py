@@ -110,8 +110,8 @@ def outputRecommend(db, deckList):
     
 def main():
     cardDefs = os.path.join("hsdata","CardDefs.xml")
-    collectionFile = "mycards.csv"
-    collectionDeckstringFile = "mycards"
+    collectionFile = "inputs/mycards.csv"
+    collectionDeckstringFile = "inputs/mycards"
     deckFile = "decks"
     deckJSONFile = "t3.json"
 

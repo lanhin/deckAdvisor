@@ -44,6 +44,8 @@ def calculateLacksFromFile(path, collection, db_dbf):
     return newlist
 
 def calculateLacksFromJSONFile(path, collection, db_dbf):
+    """
+    """
     newlist = []
     with open (path, "rt") as f:
         for line in f.readlines():
@@ -57,7 +59,7 @@ def calculateLacksFromJSONFile(path, collection, db_dbf):
             newdict = {}
             newdict["name"] = data['title'].split('-')[0]
             newdict["url"] = data['url']
-            newdict["date"] = data['date']
+            newdict["date"] = data['date'].split(' ')[1]
             newdict["type"] = data['type']
             newdict["deck"] = deck
             newdict["lacked"], newdict["alreadyHave"] = collection.calculateLacks(deck.cards)
@@ -90,12 +92,14 @@ def calcArcaneDust(cards, db_dbf):
             dustIn += 1600
     return dustOut, dustIn
 
-def outputRecommend(db, deckList):
+def outputRecommend(db, deckList, top=20):
     """Output recommend deck list
     Args:
       db: The all cards' database
-      deckList: The recommand deck list to be outputed
+      deckList: The recommand deck list to output
+      top: The number of decks to output
     """
+    step = 0
     for item in deckList:
         print ("========")
         print ("Name:",item['name'], ", type:",item['type'],  ", date:", item['date'], ", dust in need:",item['dust'],", power:",item['power'])
@@ -104,12 +108,15 @@ def outputRecommend(db, deckList):
             print("Lacked cards:")
         for cardPair in item['lacked']:
             card = db[cardPair[0]]
-            print (cardPair[1], 'x', card.name, ":", card.rarity)
+            print (cardPair[1], 'x ('+str(card.cost)+')', card.name, ":", card.rarity)
         if len(item['alreadyHave']) > 0:
             print("Already have:")
         for cardPair in item['alreadyHave']:
             card = db[cardPair[0]]
-            print (cardPair[1], 'x', card.name, ":", card.rarity)
+            print (cardPair[1], 'x ('+str(card.cost)+')', card.name, ":", card.rarity)
+        step += 1
+        if step >= top:
+            break
     print ("========")
 
 def outputRecommendToJSON(path, deckList):
@@ -168,12 +175,20 @@ def theMostWantedCards(deckList):
     # reverse sort titalLacked by value then return it
     return reversed(sorted(lackedOne.items(), key=operator.itemgetter(1))), reversed(sorted(lackedTwo.items(), key=operator.itemgetter(1))), reversed(sorted(totalLacked.items(), key=operator.itemgetter(1)))
 
-def outputCardsFromList(cardPairList, db):
+def outputCardsFromList(cardPairList, db, top=10):
     """Output cards(the appearance times and name) from a card pair list.
+    Args:
+      cardPairList: The list of card pair to output
+      db: The all cards database
+      top: The number of cards to output
     """
+    step = 0
     for cardPair in cardPairList:
         card  = db[cardPair[0]]
-        print (cardPair[1], 'x', card.name,' ', card.rarity)
+        print (cardPair[1], 'x ('+str(card.cost)+')', card.name,':', card.rarity)
+        step += 1
+        if step >= top:
+            break
     
 def main():
     cardDefs = os.path.join("hsdata","CardDefs.xml")
@@ -219,8 +234,8 @@ def main():
     sortedLacks = sorted(deckLacks, key=dust)
     
     #test start
-    print (deckLacks)
-    print (sortedLacks)
+    #print (deckLacks)
+    #print (sortedLacks)
     #test end
 
     # Output recommend decks in detail

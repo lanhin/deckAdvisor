@@ -16,6 +16,12 @@ from collection import Collection
 def initDatabaseFromXml(path, locale="zhCN"):
     """Load card database from CardDefs.xml
     and use it to initialize DBF database
+
+    Args:
+      path: The xml file to load for init
+      locale: The language setting for database
+    Returns:
+      db_dbf: The all-cards database
     """
     db, xml = load(path, locale=locale)
     db_dbf = {}
@@ -28,6 +34,13 @@ def calculateLacksFromFile(path, collection, db_dbf):
     The file should contain a set of deckstrings, every string in a line.
     This may will be removed in the future,
     since the function calculateLacksFromJSONFile() is more practical.
+
+    Args:
+      path: The file that contains the deckstrings
+      collection: Cards collection for calculation
+      db_dbf: The all-cards database
+    Returns:
+      newlist: A list of dict, each of which contains the results for a deck
     """
     newlist = []
     with open (path, "rt") as f:
@@ -53,13 +66,14 @@ def calculateLacksFromFile(path, collection, db_dbf):
 
 def calculateLacksFromJSONFile(path, collection, db_dbf, dateLimit):
     """Calculate the lacked cards from a json file
+
     Args:
       path: The path of the input json file
       collection: My card collection
       db_dbf: The database of all cards
       dateLimit: A date string, we only consider the decks newer than that
     Returns:
-      newlist: a list of dict, each of which is a deck
+      newlist: a list of dict, each of which is the result for a deck
     """
     newlist = []
     date = dt.strptime(dateLimit, "%m/%d/%Y")
@@ -93,6 +107,13 @@ def calcArcaneDust(cards, db_dbf):
     """Calculate the aracne dust
     Return how much dust will be generated from the cards (dustOut)
     or how much is needed to prodece the cards (dustIn)
+
+    Args:
+      cards: A card pair list for calculation
+      db_dbf: The all-cards database
+    Returns:
+      dustOut: How much dust will get if we break down these cards
+      dustIn: How much dust will consume if we produce these cards
     """
     dustOut = 0
     dustIn = 0
@@ -114,6 +135,7 @@ def calcArcaneDust(cards, db_dbf):
 
 def outputRecommend(db, deckList, top=20):
     """Output recommend deck list
+
     Args:
       db: The all cards' database
       deckList: The recommand deck list to output
@@ -141,6 +163,7 @@ def outputRecommend(db, deckList, top=20):
 
 def outputRecommendToJSON(path, deckList):
     """Write the recommand deck list into a json file with path PATH.
+
     Args:
       path: The output json file
       deckList: A list of dict to be written into json file.
@@ -157,7 +180,10 @@ def outputRecommendToJSON(path, deckList):
 def theUselessCards(collection, deckList):
     """Find out the cards that are useless
     Sum the 'alreadyHave' cards in deckList, and then find out the most useless ones from the collection
+
     Args:
+      collection: One's card collection
+      deckList: A list of dict produced by calculateLacksFromJSONFile() or calculateLacksFromFile()
     Return:
       newdict: the used times of every card, 
     """
@@ -178,9 +204,13 @@ def theUselessCards(collection, deckList):
 def theMostWantedCards(deckList):
     """Find out the cards that are most wanted
     Sum the 'lacked' cards in deckList, find the most wanted ones.
+
     Args:
+      deckList: A list of dict produced by calculateLacksFromJSONFile() or calculateLacksFromFile()
     Returns:
-    
+      lackedOne: A card pair list contains how many times the card appears in a lack-one deck
+      lackedTwo: A card pair list contains how many times the card appears in a lack-two deck
+      totalLacked: Total times of every card in need, it's also a card pair list
     """
     lackedOne = {}
     lackedTwo = {}
@@ -197,6 +227,7 @@ def theMostWantedCards(deckList):
 
 def outputCardsFromList(cardPairList, db, top=10):
     """Output cards(the appearance times and name) from a card pair list.
+
     Args:
       cardPairList: The list of card pair to output
       db: The all cards database

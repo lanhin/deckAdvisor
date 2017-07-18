@@ -14,12 +14,15 @@ class Collection:
         """Constructor
         All the member vars are listed
         """
-        self.collect_db = {}
-        self.num_of_cards = 0
-        self.total_num_cards = 0
+        self.collect_db = {}  # The card collection database
+        self.num_of_cards = 0 # How many kinds of cards
+        self.total_num_cards = 0 # How many cards
        
     def writeToFiles(self, path):
         """Write the database into a file with path PATH
+
+        Args:
+          path: The file to write, eg. mycards.csv
         """
         with open (path, "wt") as f:
             for card in self.collect_db:
@@ -27,6 +30,9 @@ class Collection:
                 
     def loadFromFile(self, path):
         """Load the database from a file with path PATH
+
+        Args:
+          path: The file to load from, eg. mycards.csv
         """
         with open (path, "rt") as f:
             for line in f.readlines():
@@ -43,6 +49,9 @@ class Collection:
 
     def add(self, cardPair):
         """Add a card pair into the database
+
+        Args:
+          cardPair: The (card id, card count) tuple
         """
         if self.collect_db.get(cardPair[0]) != None: # it exists
             self.collect_db[cardPair[0]] += cardPair[1]
@@ -63,6 +72,9 @@ class Collection:
     def limitTo(self, max_card_count=2):
         """Limit the max count of cards
         In the most case, we use a value "2" here
+
+        Args:
+          max_card_count: The limit value
         """
         if max_card_count < 1:
             return
@@ -73,6 +85,10 @@ class Collection:
 
     def ows(self, card):
         """Return the count of card
+
+        Args:
+          card: A dbf id of a card
+        Returns: The count of the card that is contained in the database
         """
         if self.collect_db.get(card) == None: # it doesn't exists
             return 0
@@ -82,6 +98,9 @@ class Collection:
     def initFromDeckStringFile(self, path):
         """Init the database from a deckstring file
         The file should contain a set of deckstrings, every string in a line
+
+        Args:
+          path: The deckstring file's path
         """
         with open (path, "rt") as f:
             for line in f.readlines():
@@ -91,16 +110,21 @@ class Collection:
 
     def calculateLacks(self, cards):
         """Calculate the lacked card in a deck
-        The returned value: [tuple(card id, count)]
+
+        Args:
+          cards: A deck in format [(card id, count)]
+        Returns:
+          lacks: A list of tuple (card id, count) representing the lacked cards
+          alreadyHave: A list of tuple (card id, count) representing the cards already have
         """
         lacks = []
         alreadyHave = []
-        for card in cards:
-            if self.collect_db.get(card[0]) == None: # the card doesn't exist in the collection
-                lacks.append((card[0], card[1])) # append a tuple
-            elif self.collect_db[card[0]] < card[1]:
-                lacks.append((card[0], card[1] - self.collect_db[card[0]])) # append a tuple
-                alreadyHave.append((card[0], self.collect_db[card[0]]))
-            else: # self.collect_db[card[0]] >= card[1]
-                alreadyHave.append((card[0], card[1]))
+        for cardPair in cards:
+            if self.collect_db.get(cardPair[0]) == None: # the card doesn't exist in the collection
+                lacks.append((cardPair[0], cardPair[1])) # append a tuple
+            elif self.collect_db[cardPair[0]] < cardPair[1]:
+                lacks.append((cardPair[0], cardPair[1] - self.collect_db[cardPair[0]])) # append a tuple
+                alreadyHave.append((cardPair[0], self.collect_db[cardPair[0]]))
+            else: # self.collect_db[cardPair[0]] >= cardPair[1]
+                alreadyHave.append((cardPair[0], cardPair[1]))
         return lacks, alreadyHave

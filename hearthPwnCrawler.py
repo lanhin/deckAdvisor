@@ -29,12 +29,16 @@ class Handler(BaseHandler):
     @config(priority=2)
     def detail_page(self, response):
         new_dict = {"url": response.url,
-            "title": response.doc('title').text(),
-            "deckstring": [each.attr("data-clipboard-text") for each in response.doc('[data-ga-click-event-tracking-label="Top"]').items()][0],
-            "date": [each for each in response.doc('[class="deck-details"]')('li').items()][-1].text()
+                    "title": response.doc('title').text(),
+                    "deckstring": [each.attr("data-clipboard-text") for each in response.doc('[data-ga-click-event-tracking-label="Top"]').items()][0],
+                    "date": [each for each in response.doc('[class="deck-details"]')('li').items()][-1].text(),
+                    "deck-type": [each for each in response.doc('[class="deck-details"]')('li').items()][0].text(),
+                    "archetype": [each for each in response.doc('[class="deck-details"]')('li').items()][1].text(),
+                    "rating-sum": response.doc('[class="deck-rating-form"]').text()
                    }
         if response.doc('[class="is-std"]').text():
             new_dict['type'] = 'Standard'
         else:
             new_dict['type'] = 'Wild'
+
         return new_dict

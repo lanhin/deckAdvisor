@@ -57,6 +57,9 @@ def calculateLacksFromFile(path, collection, db_dbf):
             newdict["url"] = "Unknown"
             newdict["date"] = "Unknown"
             newdict["type"] = "Unknown"
+            newdict["rating-sum"] = "Unknown"
+            newdict["deck-type"] = "Unknown"
+            newdict["rarchetype"] = "Unknown"
             newdict["deck"] = deck
             newdict["lacked"], newdict["alreadyHave"] = collection.calculateLacks(deck.cards)
             _, newdict["dust"] = calcArcaneDust(newdict["lacked"], db_dbf)
@@ -64,7 +67,7 @@ def calculateLacksFromFile(path, collection, db_dbf):
             newlist.append(newdict)
     return newlist
 
-def calculateLacksFromJSONFile(path, collection, db_dbf, dateLimit):
+def calculateLacksFromJSONFile(path, collection, db_dbf, dateLimit="07/01/2017", ratingLimit=20):
     """Calculate the lacked cards from a json file
 
     Args:
@@ -72,6 +75,7 @@ def calculateLacksFromJSONFile(path, collection, db_dbf, dateLimit):
       collection: My card collection
       db_dbf: The database of all cards
       dateLimit: A date string, we only consider the decks newer than that
+      ratingLimit: An int, ignore the decks who's 'rating-sum' is smaller than it
     Returns:
       newlist: a list of dict, each of which is the result for a deck
     """
@@ -82,7 +86,10 @@ def calculateLacksFromJSONFile(path, collection, db_dbf, dateLimit):
             cardsInDeck = 0
             data = json.loads(line)['result']
             deckCreatedDate = dt.strptime(data['date'].split(' ')[1], "%m/%d/%Y")
-            if date > deckCreatedDate:
+            if date > deckCreatedDate: # Ignore old decks
+                continue
+            deckRating = int(data['rating-sum'])
+            if ratingLimit > deckRating: # Ignore decks with small rank points
                 continue
             deck = Deck.from_deckstring(data['deckstring'])
             for cardPair in deck.cards:
@@ -95,6 +102,9 @@ def calculateLacksFromJSONFile(path, collection, db_dbf, dateLimit):
             newdict["url"] = data['url']
             newdict["date"] = data['date'].split(' ')[1]
             newdict["type"] = data['type']
+            newdict["rating-sum"] = int(data['rating-sum'])
+            newdict["deck-type"] = data['deck-type'].split(':')[1]
+            newdict["archetype"] = data['archetype'].split(':')[1]
             newdict["deck"] = deck
             newdict["lacked"], newdict["alreadyHave"] = collection.calculateLacks(deck.cards)
             _, newdict["dust"] = calcArcaneDust(newdict["lacked"], db_dbf)
@@ -144,7 +154,8 @@ def outputRecommend(db, deckList, top=20):
     step = 0
     for item in deckList:
         print ("========")
-        print ("Name:",item['name'], ", type:",item['type'],  ", date:", item['date'], ", dust in need:",item['dust'],", power:",item['power'])
+        print ("Name:",item['name'], ",  type:",item['type'],  ",  date:", item['date'], ",  dust in need:",item['dust'])
+        print ("Deck type:", item['deck-type'], ",  Archetype:", item['archetype'], ",  Rating:",item['rating-sum'], )
         print ("URL:",item['url'])
         if len(item['lacked']) > 0:
             print("Lacked cards:")
@@ -259,6 +270,7 @@ def main():
     deckJSONFile = "inputs/decks.json"
     recommendJSONFile = "outputs/recommend.json"
     dateLimit = "07/01/2017"
+    ratingLimit = 20
 
     # Cereate and init the database
     db = initDatabaseFromXml(cardDefs)
@@ -289,7 +301,7 @@ def main():
 
     # Calculate the lacked cards from deckFile
     #deckLacks0 = calculateLacksFromFile(deckFile, col, db)
-    deckLacks = calculateLacksFromJSONFile(deckJSONFile, col, db, dateLimit)
+    deckLacks = calculateLacksFromJSONFile(deckJSONFile, col, db, dateLimit, ratingLimit)
 
     def dust(a):
         return a['dust']

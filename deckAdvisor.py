@@ -221,6 +221,16 @@ def theMostWantedCards(deckList):
                 totalLacked[cardPair[0]] += cardPair[1]
             else:
                 totalLacked[cardPair[0]] = cardPair[1]
+            if cardPair[1] == 1:
+                if lackedOne.get(cardPair[0]) != None:
+                    lackedOne[cardPair[0]] += 1
+                else:
+                    lackedOne[cardPair[0]] = 1
+            else: # cardPair[1] == 2
+                if lackedTwo.get(cardPair[0]) != None:
+                    lackedTwo[cardPair[0]] += 1
+                else:
+                    lackedTwo[cardPair[0]] = 1
 
     # reverse sort titalLacked by value then return it
     return reversed(sorted(lackedOne.items(), key=operator.itemgetter(1))), reversed(sorted(lackedTwo.items(), key=operator.itemgetter(1))), reversed(sorted(totalLacked.items(), key=operator.itemgetter(1)))

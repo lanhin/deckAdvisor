@@ -145,16 +145,24 @@ def calcArcaneDust(cards, db_dbf):
             dustIn += 1600 * cardPair[1]
     return dustOut, dustIn
 
-def outputRecommend(db, deckList, top=20):
+def outputRecommend(db, deckList, top=20, decktype=None, keywordList=[]):
     """Output recommend deck list
 
     Args:
       db: The all cards' database
       deckList: The recommand deck list to output
       top: The number of decks to output
+      decktype: The type of decks to output. Value: standard, wild or None(standard and wild).
+      keywordList: A keyword list for output range
     """
     step = 0
+    if decktype == 'standard':
+        decktype = 'Standard'
+    if decktype == 'wild':
+        decktype = 'Wild' 
     for item in deckList:
+        if decktype and item['deck-type'] != decktype:
+            continue
         print ("========")
         print ("Name:",item['name'], ",  type:",item['type'],  ",  date:", item['date'], ",  dust in need:",item['dust'])
         print ("Deck type:", item['deck-type'], ",  Archetype:", item['archetype'], ",  Rating:",item['rating-sum'], )
@@ -273,7 +281,7 @@ def main():
     deckJSONFile = "inputs/decks.json"
     recommendJSONFile = "outputs/recommend.json"
     dateLimit = "07/01/2017"
-    ratingLimit = 20
+    ratingLimit = 2
 
     # Cereate and init the database
     db = initDatabaseFromXml(cardDefs)
@@ -309,7 +317,10 @@ def main():
 
     def dust(a):
         return a['dust']
-    sortedLacks = sorted(deckLacks, key=dust)
+    def rate(a):
+        return a['rating-sum']
+    sortedLacks_tmp = reversed(sorted(deckLacks, key=rate))
+    sortedLacks = sorted(sortedLacks_tmp, key=dust)
     
     #test start
     #print (deckLacks)
@@ -318,7 +329,7 @@ def main():
     #test end
 
     # Output recommend decks in detail
-    outputRecommend(db, sortedLacks)
+    outputRecommend(db, sortedLacks, top=10)
 
     outputRecommendToJSON(recommendJSONFile, sortedLacks)
 

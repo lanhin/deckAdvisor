@@ -145,13 +145,14 @@ def calcArcaneDust(cards, db_dbf):
             dustIn += 1600 * cardPair[1]
     return dustOut, dustIn
 
-def outputRecommend(db, deckList, top=20, decktype=None, keywordList=[]):
+def outputRecommend(db, deckList, top=20, dustLimit=-1, decktype=None, keywordList=[]):
     """Output recommend deck list
 
     Args:
       db: The all cards' database
       deckList: The recommand deck list to output
       top: The number of decks to output
+      dustLimit: If this value > 0, filter decks that need more dust than it.
       decktype: The type of decks to output. Value: standard, wild or None(standard and wild).
       keywordList: A keyword list for output range
     """
@@ -161,7 +162,9 @@ def outputRecommend(db, deckList, top=20, decktype=None, keywordList=[]):
     if decktype == 'wild':
         decktype = 'Wild' 
     for item in deckList:
-        if decktype and item['deck-type'] != decktype:
+        if decktype and item['type'] != decktype and item['item'] != "Unknown": # Let "Unknown" go.
+            continue
+        if dustLimit > 0 and item['dust'] > dustLimit:
             continue
         print ("========")
         print ("Name:",item['name'], ",  type:",item['type'],  ",  date:", item['date'], ",  dust in need:",item['dust'])
@@ -281,7 +284,10 @@ def main():
     deckJSONFile = "inputs/decks.json"
     recommendJSONFile = "outputs/recommend.json"
     dateLimit = "07/01/2017"
-    ratingLimit = 2
+    ratingLimit = 0
+    outputCounts = 20
+    dustLimitation = 0
+    typeLimitation = None
 
     # Cereate and init the database
     db = initDatabaseFromXml(cardDefs)
@@ -329,7 +335,7 @@ def main():
     #test end
 
     # Output recommend decks in detail
-    outputRecommend(db, sortedLacks, top=10)
+    outputRecommend(db, sortedLacks, top=outputCounts, dustLimit=dustLimitation, decktype=typeLimitation)
 
     outputRecommendToJSON(recommendJSONFile, sortedLacks)
 
@@ -340,10 +346,10 @@ def main():
     print ("========")
     print ("The unsed cards:")
 #    print (unused)
-    outputCardsFromList(unused, db)
+#    outputCardsFromList(unused, db)
     print ("========")
     print ("The most wanted cards:")
-    outputCardsFromList(timetotal, db)
+#    outputCardsFromList(timetotal, db)
     #test end
     
 if __name__ == "__main__":

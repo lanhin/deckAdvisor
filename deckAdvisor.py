@@ -61,6 +61,7 @@ def calculateLacksFromFile(path, collection, db_dbf):
             newdict["deck-type"] = "Unknown"
             newdict["rarchetype"] = "Unknown"
             newdict["deck"] = deck
+            newdict["deckstring"] = line
             newdict["lacked"], newdict["alreadyHave"] = collection.calculateLacks(deck.cards)
             _, newdict["dust"] = calcArcaneDust(newdict["lacked"], db_dbf)
             newdict["power"] = 1
@@ -106,6 +107,7 @@ def calculateLacksFromJSONFile(path, collection, db_dbf, dateLimit="07/01/2017",
             newdict["deck-type"] = data['deck-type'].split(':')[1]
             newdict["archetype"] = data['archetype'].split(':')[1]
             newdict["deck"] = deck
+            newdict["deckstring"] = data['deckstring']
             newdict["lacked"], newdict["alreadyHave"] = collection.calculateLacks(deck.cards)
             _, newdict["dust"] = calcArcaneDust(newdict["lacked"], db_dbf)
             newdict["power"] = 1
@@ -156,6 +158,7 @@ def outputRecommend(db, deckList, top=20):
         print ("========")
         print ("Name:",item['name'], ",  type:",item['type'],  ",  date:", item['date'], ",  dust in need:",item['dust'])
         print ("Deck type:", item['deck-type'], ",  Archetype:", item['archetype'], ",  Rating:",item['rating-sum'], )
+        print ("Deckstring:", item['deckstring'])
         print ("URL:",item['url'])
         if len(item['lacked']) > 0:
             print("Lacked cards:")
@@ -276,12 +279,13 @@ def main():
     db = initDatabaseFromXml(cardDefs)
 
     # test start
+    '''
     deck = Deck.from_deckstring("AAEBAf0ECMAB5gT7BPsFigbYE5KsAv2uAgucArsClQONBKsEtAThBJYF7Ae8CImsAgA=")
 
     for cardPair in deck.cards:
         card = db[cardPair[0]]
         print (cardPair[1],"x(", card.cost,")", card.name)
-
+    '''
     #test end
 
     # Create and init my card collections
@@ -295,7 +299,7 @@ def main():
         col.writeToFiles(collectionFile)
 
     #test start
-    col.output()
+    #col.output()
     #test end
 
 

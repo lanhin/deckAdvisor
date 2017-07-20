@@ -81,14 +81,22 @@ def calculateLacksFromJSONFile(path, collection, db_dbf, dateLimit="07/01/2017",
       newlist: a list of dict, each of which is the result for a deck
     """
     newlist = []
+    deckstringSet = set()
     date = dt.strptime(dateLimit, "%m/%d/%Y")
     with open (path, "rt") as f:
         for line in f.readlines():
             cardsInDeck = 0
-            data = json.loads(line)['result']
+            linedict = json.loads(line)
+            if linedict.get('result') != None: # A json file produced by pyspider directly
+                data = linedict['result']
+            else:
+                data = linedict
             deckCreatedDate = dt.strptime(data['date'].split(' ')[1], "%m/%d/%Y")
             if date > deckCreatedDate: # Ignore old decks
                 continue
+            if data['deckstring'] in deckstringSet: # The deckstring has already processed
+                continue
+            deckstringSet.add(data['deckstring'])
             deckRating = int(data['rating-sum'])
             if ratingLimit > deckRating: # Ignore decks with small rank points
                 continue
@@ -186,21 +194,27 @@ def outputRecommend(db, deckList, top=20, dustLimit=-1, decktype=None, keywordLi
             break
     print ("========")
 
-def outputRecommendToJSON(path, deckList):
-    """Write the recommand deck list into a json file with path PATH.
+def outputDictListToJSON(path, deckList, ignore='deck'):
+    """Write the deck list into a json file with path PATH.
 
     Args:
       path: The output json file
       deckList: A list of dict to be written into json file.
+      ignore: ignore this filed in the dict when output
     TODO: check if path already exists, mkdir if not.
     """
     with open (path, "w") as f:
         for item in deckList:
-            # Pop 'deck' from item since deck is not JSON serializable
-            deck = item['deck']
-            item.pop('deck')
-            json.dump(item, f)
-            item['deck'] = deck
+            # Pop ignore from item before store
+            # eg. Pop 'deck' from item since deck is not JSON serializable
+            if item.get(ignore) != None:
+                deck = item[ignore]
+                item.pop(ignore)
+                json.dump(item, f)
+                f.write('\n')
+                item['deck'] = deck
+            else:
+                json.dump(item, f)
 
 def theUselessCards(collection, deckList):
     """Find out the cards that are useless
@@ -283,7 +297,7 @@ def main():
     deckFile = "inputs/decks"
     deckJSONFile = "inputs/decks.json"
     recommendJSONFile = "outputs/recommend.json"
-    dateLimit = "07/01/2017"
+    dateLimit = "04/01/2017"
     ratingLimit = 0
     outputCounts = 20
     dustLimitation = 0
@@ -337,7 +351,7 @@ def main():
     # Output recommend decks in detail
     outputRecommend(db, sortedLacks, top=outputCounts, dustLimit=dustLimitation, decktype=typeLimitation)
 
-    outputRecommendToJSON(recommendJSONFile, sortedLacks)
+    outputDictListToJSON(recommendJSONFile, sortedLacks)
 
     #test start
     unused = theUselessCards(col, sortedLacks)

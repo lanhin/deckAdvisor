@@ -68,7 +68,7 @@ def calculateLacksFromFile(path, collection, db_dbf):
             newlist.append(newdict)
     return newlist
 
-def calculateLacksFromJSONFile(path, collection, db_dbf, dateLimit="07/01/2017", ratingLimit=20):
+def calculateLacksFromJSONFile(path, collection, db_dbf, dateLimit="07/01/2017", ratingLimit=20, filteredJSONFile=None):
     """Calculate the lacked cards from a json file
 
     Args:
@@ -77,6 +77,7 @@ def calculateLacksFromJSONFile(path, collection, db_dbf, dateLimit="07/01/2017",
       db_dbf: The database of all cards
       dateLimit: A date string, we only consider the decks newer than that
       ratingLimit: An int, ignore the decks who's 'rating-sum' is smaller than it
+      filteredJSONFile: If it isn't None, store the filted JSON into it.
     Returns:
       newlist: a list of dict, each of which is the result for a deck
     """
@@ -84,6 +85,8 @@ def calculateLacksFromJSONFile(path, collection, db_dbf, dateLimit="07/01/2017",
     deckstringSet = set()
     date = dt.strptime(dateLimit, "%m/%d/%Y")
     with open (path, "rt") as f:
+        if filteredJSONFile != None:
+            JSONOut = open(filteredJSONFile, "wt")
         for line in f.readlines():
             cardsInDeck = 0
             linedict = json.loads(line)
@@ -120,6 +123,13 @@ def calculateLacksFromJSONFile(path, collection, db_dbf, dateLimit="07/01/2017",
             _, newdict["dust"] = calcArcaneDust(newdict["lacked"], db_dbf)
             newdict["power"] = 1
             newlist.append(newdict)
+            if filteredJSONFile != None:
+                json.dump(data, JSONOut)
+                JSONOut.write('\n')
+
+        if filteredJSONFile != None:
+            JSONOut.close()
+
     return newlist
 
 
@@ -215,6 +225,7 @@ def outputDictListToJSON(path, deckList, ignore='deck'):
                 item['deck'] = deck
             else:
                 json.dump(item, f)
+                f.write('\n')
 
 def theUselessCards(collection, deckList):
     """Find out the cards that are useless
@@ -302,6 +313,7 @@ def main():
     outputCounts = 20
     dustLimitation = 0
     typeLimitation = None
+    filteredDeckJSON = "inputs/decks_db.json"
 
     # Cereate and init the database
     db = initDatabaseFromXml(cardDefs)
@@ -333,7 +345,10 @@ def main():
 
     # Calculate the lacked cards from deckFile
     #deckLacks0 = calculateLacksFromFile(deckFile, col, db)
-    deckLacks = calculateLacksFromJSONFile(deckJSONFile, col, db, dateLimit, ratingLimit)
+    if os.path.exists(filteredDeckJSON):
+        deckLacks = calculateLacksFromJSONFile(filteredDeckJSON, col, db, dateLimit, ratingLimit, None)
+    else:
+        deckLacks = calculateLacksFromJSONFile(deckJSONFile, col, db, dateLimit, ratingLimit, filteredDeckJSON)
 
     def dust(a):
         return a['dust']

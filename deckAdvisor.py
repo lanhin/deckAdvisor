@@ -10,7 +10,7 @@ from datetime import datetime as dt
 from hearthstone.deckstrings import Deck
 from hearthstone.enums import FormatType
 from hearthstone.cardxml import load
-from hearthstone.enums import Locale,Rarity
+from hearthstone.enums import Locale,Rarity,CardClass
 from collection import Collection
 
 def initDatabaseFromXml(path, locale="zhCN"):
@@ -103,7 +103,10 @@ def calculateLacksFromJSONFile(path, collection, db_dbf, dateLimit="07/01/2017",
             deckRating = int(data['rating-sum'])
             if ratingLimit > deckRating: # Ignore decks with small rank points
                 continue
-            deck = Deck.from_deckstring(data['deckstring'])
+            try:
+                deck = Deck.from_deckstring(data['deckstring'])
+            except:
+                print("exception catched, dechstring:", data['deckstring'])
             for cardPair in deck.cards:
                 cardsInDeck += cardPair[1]
             if cardsInDeck < 30:
@@ -178,9 +181,14 @@ def outputRecommend(db, deckList, top=20, dustLimit=-1, decktype=None, keywordLi
     if decktype == 'standard':
         decktype = 'Standard'
     if decktype == 'wild':
-        decktype = 'Wild' 
+        decktype = 'Wild'
+    deckgoaltype = 'Ranked'
+    print (type(deckList), len(deckList))
     for item in deckList:
-        if decktype and item['type'] != decktype and item['item'] != "Unknown": # Let "Unknown" go.
+        #if decktype and item['type'] != decktype and item['type'] != "Unknown": # Let "Unknown" go.
+        if decktype and not (decktype in item['type']) and item['type'] != "Unknown": # Let "Unknown" go.
+            continue
+        if deckgoaltype and not (deckgoaltype in item['deck-type']):
             continue
         if dustLimit > 0 and item['dust'] > dustLimit:
             continue
@@ -308,8 +316,8 @@ def main():
     deckFile = "inputs/decks"
     deckJSONFile = "inputs/decks.json"
     recommendJSONFile = "outputs/recommend.json"
-    dateLimit = "04/01/2017"
-    ratingLimit = 0
+    dateLimit = "01/05/2015"
+    ratingLimit = 5
     outputCounts = 20
     dustLimitation = 0
     typeLimitation = None
@@ -339,7 +347,7 @@ def main():
         col.writeToFiles(collectionFile)
 
     #test start
-    #col.output()
+    col.output()
     #test end
 
 
@@ -355,6 +363,7 @@ def main():
     def rate(a):
         return a['rating-sum']
     sortedLacks_tmp = reversed(sorted(deckLacks, key=rate))
+    #outputRecommend(db, list(sortedLacks_tmp), top=outputCounts, dustLimit=dustLimitation, decktype=typeLimitation)
     sortedLacks = sorted(sortedLacks_tmp, key=dust)
     
     #test start
@@ -365,6 +374,7 @@ def main():
 
     # Output recommend decks in detail
     outputRecommend(db, sortedLacks, top=outputCounts, dustLimit=dustLimitation, decktype=typeLimitation)
+    #outputRecommend(db, list(sortedLacks_tmp), top=outputCounts, dustLimit=dustLimitation, decktype=typeLimitation)
 
     outputDictListToJSON(recommendJSONFile, sortedLacks)
 
@@ -373,12 +383,12 @@ def main():
     time1, time2, timetotal = theMostWantedCards(sortedLacks)
 
     print ("========")
-    print ("The unsed cards:")
+    print ("The unused cards:")
 #    print (unused)
-#    outputCardsFromList(unused, db)
+    outputCardsFromList(unused, db)
     print ("========")
     print ("The most wanted cards:")
-#    outputCardsFromList(timetotal, db)
+    outputCardsFromList(timetotal, db)
     #test end
     
 if __name__ == "__main__":

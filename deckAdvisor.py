@@ -72,7 +72,7 @@ def calculateLacksFromJSONFile(path, collection, db_dbf, dateLimit="07/01/2017",
     """Calculate the lacked cards from a json file
 
     Args:
-      path: The path of the input json file
+      path: The path of the input json file (which contains decks produced by pyspider)
       collection: My card collection
       db_dbf: The database of all cards
       dateLimit: A date string, we only consider the decks newer than that
@@ -122,6 +122,7 @@ def calculateLacksFromJSONFile(path, collection, db_dbf, dateLimit="07/01/2017",
             newdict["archetype"] = data['archetype'].split(':')[1]
             newdict["deck"] = deck
             newdict["deckstring"] = data['deckstring']
+            newdict["cardclass"] = calcCardClass(deck.cards, db_dbf)
             newdict["lacked"], newdict["alreadyHave"] = collection.calculateLacks(deck.cards)
             _, newdict["dust"] = calcArcaneDust(newdict["lacked"], db_dbf)
             newdict["power"] = 1
@@ -135,6 +136,14 @@ def calculateLacksFromJSONFile(path, collection, db_dbf, dateLimit="07/01/2017",
 
     return newlist
 
+def calcCardClass(cards, db_dbf):
+    for cardPair in cards:
+        card = db_dbf[cardPair[0]]
+        if card.card_class != CardClass.NEUTRAL\
+           and card.card_class != CardClass.INVALID\
+           and card.card_class != CardClass.DEATHKNIGHT\
+           and card.card_class != CardClass.DREAM:
+            return card.card_class
 
 def calcArcaneDust(cards, db_dbf):
     """Calculate the aracne dust
@@ -166,7 +175,7 @@ def calcArcaneDust(cards, db_dbf):
             dustIn += 1600 * cardPair[1]
     return dustOut, dustIn
 
-def outputRecommend(db, deckList, top=20, dustLimit=-1, decktype=None, keywordList=[]):
+def outputRecommend(db, deckList, top=20, dustLimit=-1, decktype=None, cardClass=None, keywordList=[]):
     """Output recommend deck list
 
     Args:
@@ -185,6 +194,8 @@ def outputRecommend(db, deckList, top=20, dustLimit=-1, decktype=None, keywordLi
     deckgoaltype = 'Ranked'
     print (type(deckList), len(deckList))
     for item in deckList:
+        if cardClass and item['cardclass'] != cardClass:
+            continue
         #if decktype and item['type'] != decktype and item['type'] != "Unknown": # Let "Unknown" go.
         if decktype and not (decktype in item['type']) and item['type'] != "Unknown": # Let "Unknown" go.
             continue
@@ -218,7 +229,7 @@ def outputDictListToJSON(path, deckList, ignore='deck'):
     Args:
       path: The output json file
       deckList: A list of dict to be written into json file.
-      ignore: ignore this filed in the dict when output
+      ignore: ignore this field in the dict when output
     TODO: check if path already exists, mkdir if not.
     """
     with open (path, "w") as f:
@@ -322,6 +333,24 @@ def main():
     dustLimitation = 0
     typeLimitation = None
     filteredDeckJSON = "inputs/decks_db.json"
+    
+    '''
+    CardClass
+    INVALID = 0
+    DEATHKNIGHT = 1
+    DRUID = 2    德鲁伊
+    HUNTER = 3
+    MAGE = 4    法师
+    PALADIN = 5    圣骑士
+    PRIEST = 6    牧师
+    RUGUE = 7    盗贼
+    SHAMAN = 8
+    WARLOCK = 9    术士
+    WARRIOR = 10    战士
+    DREAM = 11    梦境
+    NEUTRAL = 12
+    '''
+    classLimitation = CardClass.MAGE
 
     # Cereate and init the database
     db = initDatabaseFromXml(cardDefs)
@@ -373,7 +402,7 @@ def main():
     #test end
 
     # Output recommend decks in detail
-    outputRecommend(db, sortedLacks, top=outputCounts, dustLimit=dustLimitation, decktype=typeLimitation)
+    outputRecommend(db, sortedLacks, top=outputCounts, dustLimit=dustLimitation, decktype=typeLimitation, cardClass = classLimitation)
     #outputRecommend(db, list(sortedLacks_tmp), top=outputCounts, dustLimit=dustLimitation, decktype=typeLimitation)
 
     outputDictListToJSON(recommendJSONFile, sortedLacks)
